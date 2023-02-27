@@ -633,14 +633,19 @@ void LevelScene::updateplayerColisson() {
     return;
   }
   SDL_Rect playerRect = player->getRect();
-  playerRect.w = static_cast<int>(playerRect.w * 0.7);
-  playerRect.h = static_cast<int>(playerRect.h * 0.7);
+  playerRect.w = static_cast<int>(playerRect.w * 0.9);
+  playerRect.h = static_cast<int>(playerRect.h * 0.9);
 
   for (const auto collison : colissions) {
     if (isColissonDetect(playerRect, collison.second->getRect())) {
-      player->revertLastMove();
-      player->revertLastMove();
+
       // std::cout << "collison with " << collison.first << std::endl;
+      int posX = std::round(player->getRect().x / 48.0f);
+      std::cout << player->getRect().x << " " << player->getRect().y
+                << std::endl;
+      int posY = std::round((player->getRect().y - 70) / 48.0f);
+      std::cout << posX << " " << posY << std::endl;
+      player->setPosition(posX * scaledTileSize, posY * scaledTileSize + 70);
     }
   }
 }
@@ -662,6 +667,39 @@ void LevelScene::updateEnemyColisson() {
         enemy->setPosition(posX * scaledTileSize, posY * scaledTileSize + 70);
       }
     }
+    // if (bomb && isColissonDetect(enemy->getRect(), bomb->getRect())) {
+    //   // stop moving on collision detection
+    //   enemy->setMove(false);
+    //   enemy->revertLastMove();
+    // }
+    // // check for player collision
+    // if (player != nullptr) {
+    //   // set width to smaller size
+    //   SDL_Rect playerRect = player->getRect();
+    //   playerRect.w = static_cast<int>(playerRect.w * 0.2);
+    //   playerRect.h = static_cast<int>(playerRect.h * 0.2);
+    //   if (isColissonDetect(playerRect, enemy->getRect())) {
+    //     // player killed by enemy
+    //     deleteObject(player);
+    //     player = nullptr;
+    //     gameOver();
+    //   }
+    // }
+    // if (player != nullptr) {
+    //   // can attack?
+    //   if (!enemy->isMoveToCell() && enemy->canAttack()) {
+    //     // check for attack radius
+    //     if (abs(player->getPositionX() + player->getWidth() / 2 -
+    //             enemy->getPositionX() - enemy->getWidth() / 2) <
+    //             enemy->getAttackRadius() &&
+    //         abs(player->getPositionY() + player->getHeight() / 2 -
+    //             enemy->getPositionY() - enemy->getHeight() / 2) <
+    //             enemy->getAttackRadius()) {
+    //       // start follow to player
+    //       toFollowPlayer(enemy);
+    //     }
+    //   }
+    // }
   }
 }
 

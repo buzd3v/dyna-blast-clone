@@ -21,5 +21,5 @@ private:
   bool isMovingHorizontal() const;
   bool isMovingVertical() const;
   Direction m_direction = Direction::NONE;
-  const float speed = 0.002f;
+  const float speed = 0.003f;
 };
