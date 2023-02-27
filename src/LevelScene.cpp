@@ -1,7 +1,10 @@
 #include "../include/LevelScene.h"
 #include "../include/Global.h"
+#include "../include/StageScene.h"
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_rect.h>
+#include <SDL2/SDL_scancode.h>
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <functional>
@@ -148,6 +151,8 @@ void LevelScene::spawnBrick(const int x, const int y) {
       game->getAssetManager()->getTexture(Texture::Brick),
       game->getGlobalRenderer());
   brick->setPosition(x, y);
+  brick->setSrcRect(48, 48, 0, 0);
+
   brick->setSize(tileWidth, tileHeight);
   addObject(brick);
   colissions.push_back(std::make_pair(Tile::Brick, brick));
@@ -386,7 +391,7 @@ void LevelScene::spawnBang(Object *object) {
     tiles[bangCellY][bangCellX] = Tile::Bang;
     // animation
     auto animation = std::make_shared<Animation>();
-    for (unsigned int j = 1; j < 12; j++) {
+    for (unsigned int j = 0; j < 7; j++) {
       animation->addFrame(Frame(tileWidth * j, 0, tileWidth, tileWidth));
     }
     animation->setSprite(bang.get());
@@ -405,11 +410,23 @@ void LevelScene::spawnDoor(Object *object) {
   insertObject(door, backgroundObjectLastNumber);
 }
 
-void LevelScene::finish() const {}
+void LevelScene::finish() const {
+  if (isWin) {
+    game->getSceneManager()->addScene(
+        "stage", std::make_shared<StageScene>(game, stage + 1, score));
+    game->getSceneManager()->activeScene("stage");
+  } else {
+    game->getSceneManager()->activeScene("gameover");
+  }
+  game->getSceneManager()->removeScene("level");
+}
 
-void LevelScene::gameOver() const {}
+void LevelScene::gameOver() {
+  gameOverTimer = gameOverTimerStart;
+  isGameOver = true;
+}
 
-void LevelScene::exit() const {}
+void LevelScene::exit() {}
 
 void LevelScene::event(SDL_Event &event) {
   Scene::event(event);
@@ -437,7 +454,7 @@ void LevelScene::event(SDL_Event &event) {
 
     }
     // stage complete cheat
-    else if (event.key.keysym.scancode == SDL_SCANCODE_BACKSPACE) {
+    else if (event.key.keysym.scancode == SDL_SCANCODE_TAB) {
       gameOver();
       isWin = true;
       score += stageCompleteScore * 100;
@@ -617,12 +634,12 @@ void LevelScene::updateCamera() {}
 void LevelScene::updateScore() {
   std::string scoreText = std::to_string(score);
   scoreNumber->setText(scoreText);
-  scoreNumber->setSize(static_cast<int>(timerNumber->getWidth() / 3.0f) *
-                           static_cast<int>(scoreText.size()),
-                       scoreNumber->getHeight());
-  scoreNumber->setPosition(game->getWindowWidth() / 2 -
-                               scoreNumber->getWidth() / 2,
-                           scoreNumber->getPositionY());
+  int fontWidth = 15;
+  int fontHeight = 15;
+  scoreNumber->setSize(fontWidth * static_cast<int>(scoreText.size()),
+                       fontHeight);
+  scoreNumber->setPosition(300 - fontWidth * static_cast<int>(scoreText.size()),
+                           26);
 }
 
 void LevelScene::updateplayerColisson() {
@@ -667,43 +684,89 @@ void LevelScene::updateEnemyColisson() {
         enemy->setPosition(posX * scaledTileSize, posY * scaledTileSize + 70);
       }
     }
-    // if (bomb && isColissonDetect(enemy->getRect(), bomb->getRect())) {
-    //   // stop moving on collision detection
-    //   enemy->setMove(false);
-    //   enemy->revertLastMove();
-    // }
-    // // check for player collision
-    // if (player != nullptr) {
-    //   // set width to smaller size
-    //   SDL_Rect playerRect = player->getRect();
-    //   playerRect.w = static_cast<int>(playerRect.w * 0.2);
-    //   playerRect.h = static_cast<int>(playerRect.h * 0.2);
-    //   if (isColissonDetect(playerRect, enemy->getRect())) {
-    //     // player killed by enemy
-    //     deleteObject(player);
-    //     player = nullptr;
-    //     gameOver();
-    //   }
-    // }
-    // if (player != nullptr) {
-    //   // can attack?
-    //   if (!enemy->isMoveToCell() && enemy->canAttack()) {
-    //     // check for attack radius
-    //     if (abs(player->getPositionX() + player->getWidth() / 2 -
-    //             enemy->getPositionX() - enemy->getWidth() / 2) <
-    //             enemy->getAttackRadius() &&
-    //         abs(player->getPositionY() + player->getHeight() / 2 -
-    //             enemy->getPositionY() - enemy->getHeight() / 2) <
-    //             enemy->getAttackRadius()) {
-    //       // start follow to player
-    //       toFollowPlayer(enemy);
-    //     }
-    //   }
-    // }
+    if (bomb && isColissonDetect(enemy->getRect(), bomb->getRect())) {
+      // stop moving on collision detection
+      enemy->setMove(false);
+      enemy->revertLastMove();
+    }
+    // check for player collision
+    if (player != nullptr) {
+      // set width to smaller size
+      SDL_Rect playerRect = player->getRect();
+      playerRect.w = static_cast<int>(playerRect.w * 0.2);
+      playerRect.h = static_cast<int>(playerRect.h * 0.2);
+      if (isColissonDetect(playerRect, enemy->getRect())) {
+        // player killed by enemy
+        deleteObject(player);
+        player = nullptr;
+        gameOver();
+      }
+    }
+    if (player != nullptr) {
+      // can attack?
+      if (!enemy->isMoveToCell() && enemy->canAttack()) {
+        // check for attack radius
+        if (abs(player->getPositionX() + player->getWidth() / 2 -
+                enemy->getPositionX() - enemy->getWidth() / 2) <
+                enemy->getAttackRadius() &&
+            abs(player->getPositionY() + player->getHeight() / 2 -
+                enemy->getPositionY() - enemy->getHeight() / 2) <
+                enemy->getAttackRadius()) {
+          // start follow to player
+          toFollowPlayer(enemy);
+        }
+      }
+    }
   }
 }
 
-void LevelScene::updateBangColisson() {}
+void LevelScene::updateBangColisson() {
+  // check for bang collision
+  for (const auto &bang : bangs) {
+    // check bricks
+    auto itCollision = colissions.begin();
+    while (itCollision != colissions.end()) {
+      if ((*itCollision).first == Tile::Brick) {
+        auto brick = (*itCollision).second;
+        if (isColissonDetect(brick->getRect(), bang->getRect())) {
+          destroyBrick(brick);
+          // remove brick from collision array
+          itCollision = colissions.erase(itCollision);
+          continue;
+        }
+      }
+      ++itCollision;
+    }
+    // check enemies
+    auto itEnemies = enemies.begin();
+    while (itEnemies != enemies.end()) {
+      SDL_Rect enemyRect = (*itEnemies)->getRect();
+      enemyRect.w = static_cast<int>(enemyRect.w * 0.2);
+      enemyRect.h = static_cast<int>(enemyRect.h * 0.2);
+      if (isColissonDetect(enemyRect, bang->getRect())) {
+        deleteObject(*itEnemies);
+        itEnemies = enemies.erase(itEnemies);
+
+        // enemy killed by bang
+        score += killScore;
+        updateScore();
+        continue;
+      }
+      ++itEnemies;
+    }
+    // check player
+    if (player != nullptr) {
+      SDL_Rect playerRect = player->getRect();
+      playerRect.w = static_cast<int>(playerRect.w * 0.2f);
+      playerRect.h = static_cast<int>(playerRect.h * 0.2f);
+      if (isColissonDetect(playerRect, bang->getRect())) {
+        deleteObject(player);
+        player = nullptr;
+        gameOver();
+      }
+    }
+  }
+}
 
 bool LevelScene::isColissonDetect(const SDL_Rect &rect1,
                                   const SDL_Rect &rect2) {
@@ -720,6 +783,43 @@ bool LevelScene::isColissonDetect(const SDL_Rect &rect1,
   return true;
 }
 
-void LevelScene::destroyBrick(std::shared_ptr<Object> brick) {}
+void LevelScene::destroyBrick(std::shared_ptr<Sprite> brick) {
+  // we need door if don't have
+  if (door == nullptr) {
+    // left bricks count
+    long bricksCount =
+        std::count_if(colissions.begin(), colissions.end(), [](auto collision) {
+          return collision.first == Tile::Brick;
+        });
+    // random for door spawn
+
+    const auto seed =
+        std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    auto randDoor =
+        std::bind(std::uniform_int_distribution<int>(0, doorSpawnRandom),
+                  std::mt19937(static_cast<unsigned int>(seed)));
+    // spawn door if we can
+    if (randDoor() == 0 || bricksCount <= 1) {
+      spawnDoor(brick.get());
+    }
+  }
+  // change brick to grass and remove it
+  auto animation = std::make_shared<Animation>();
+
+  for (auto i = 1; i <= 7; i++) {
+    animation->addFrame(Frame(i * tileWidth, 0, tileWidth, tileHeight));
+  }
+  animation->setSprite(brick.get());
+  const int brickCellX =
+      static_cast<int>(round((brick->getPositionX() - fieldPositionX) /
+                             static_cast<float>(scaledTileSize)));
+  const int brickCellY =
+      static_cast<int>(round((brick->getPositionY() - fieldPositionY) /
+                             static_cast<float>(scaledTileSize)));
+  tiles[brickCellY][brickCellX] = Tile::Grass;
+  brick->addAnimation(animation);
+
+  deleteObject(brick);
+}
 
 void LevelScene::toFollowPlayer(std::shared_ptr<Enemy> enemy) {}

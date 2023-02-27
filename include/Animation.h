@@ -25,6 +25,8 @@ public:
   void setSprite(Sprite *Sprite);
   void setAnimationLong(const uint32_t delayMs);
   void play();
+  void playOneTime();
+
   void pause();
   void reset();
   void unsetSprite();

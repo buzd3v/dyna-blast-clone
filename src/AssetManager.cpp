@@ -28,7 +28,7 @@ void AssetManager::load(SDL_Renderer *renderer) {
   loadTexture(renderer, Texture::Enemy2, "sprites/enemy/drop@4.png");
   loadTexture(renderer, Texture::Enemy3, "sprites/enemy/fire@4.png");
   loadTexture(renderer, Texture::Bomb, "sprites/bomb@4.png");
-  loadTexture(renderer, Texture::Explosion, "sprites/explosion@29.png");
+  loadTexture(renderer, Texture::Explosion, "sprites/bonus_explosion@7.png");
   loadTexture(renderer, Texture::Door, "sprites/exit@2.png");
 }
 

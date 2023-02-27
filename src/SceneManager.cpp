@@ -9,6 +9,7 @@ void SceneManager::addScene(const std::string &name,
     std::cout << "Scene Manager added: " + name +
                      " not success cause it already have in the Scenes"
               << std::endl;
+    // it->second = scene;
     return;
   } else {
     scenes.emplace(name, scene);
@@ -33,7 +34,7 @@ void SceneManager::activeScene(const std::string &name) {
 void SceneManager::removeScene(const std::string &name) {
   const auto it = scenes.find(name);
   if (it != scenes.end()) {
-    if (currentScene = it->second) {
+    if (currentScene == it->second) {
       {
         currentScene->exit();
         currentScene = nullptr;

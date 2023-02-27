@@ -25,7 +25,7 @@ void StageScene::update(uint32_t delta) {
     game->getSceneManager()->addScene(
         "level", std::make_shared<LevelScene>(game, stage, score));
     game->getSceneManager()->activeScene("level");
-    // game->getSceneManager()->removeScene("stage");
+    game->getSceneManager()->removeScene("stage");
     // sleep(10);
   }
 }

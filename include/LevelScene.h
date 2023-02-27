@@ -50,8 +50,8 @@ private:
   void spawnScoreBoard();
 
   void finish() const;
-  void gameOver() const;
-  void exit() const;
+  void gameOver();
+  void exit();
 
   // timers
 
@@ -73,7 +73,7 @@ private:
 
   bool isColissonDetect(const SDL_Rect &obj1, const SDL_Rect &obj2);
 
-  void destroyBrick(std::shared_ptr<Object> brick);
+  void destroyBrick(std::shared_ptr<Sprite> brick);
 
   void toFollowPlayer(std::shared_ptr<Enemy> enemy);
 
@@ -96,7 +96,7 @@ private:
   std::shared_ptr<Object> door = nullptr;
 
   // colisson
-  std::vector<std::pair<Tile, std::shared_ptr<Object>>> colissions;
+  std::vector<std::pair<Tile, std::shared_ptr<Sprite>>> colissions;
   std::vector<std::shared_ptr<Object>> bangs;
   Tile tiles[TileArrayHeight][TileArrayWidth];
 

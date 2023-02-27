@@ -19,8 +19,25 @@ void Animation::play() {
   if (isPlaying)
     return;
   isPlaying = true;
-  time = timeAnimation;
+  time = 0;
 }
+void Animation::playOneTime() {
+  if (isPlaying) {
+    return;
+  }
+  isPlaying = true;
+
+  time += 20;
+  if (time >= timeAnimation) {
+    time = 0;
+    Frame frame = animation[currentEntity];
+    currentEntity = (currentEntity + 1) % animation.size();
+    sprite->setSrcRect(
+        static_cast<int>(frame.width), static_cast<int>(frame.height),
+        static_cast<int>(frame.posX), static_cast<int>(frame.posY));
+  }
+}
+
 void Animation::pause() { isPlaying = false; }
 void Animation::setAnimationLong(const uint32_t delayMs) {
   timeAnimation = delayMs;
