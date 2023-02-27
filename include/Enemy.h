@@ -24,6 +24,8 @@ public:
   void setAIType(AIType type);
   virtual void update(const uint32_t delta) override;
   void genNewPath();
+  void changeOppositeDir();
+  void changeDir(int dir);
 
 private:
   void updateMoveMent(const uint32_t delta);
@@ -35,6 +37,7 @@ private:
 
   AIType type = AIType::wandering;
 
+  int direction = 1;
   const float baseAtkspeed = 0.0018f;
   const float attackSpeed = 0.0025f;
   const int attackRadius = 4;

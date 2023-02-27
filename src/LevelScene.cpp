@@ -1,7 +1,9 @@
 #include "../include/LevelScene.h"
 #include "../include/Global.h"
 #include <SDL2/SDL_events.h>
+#include <SDL2/SDL_rect.h>
 #include <chrono>
+#include <cmath>
 #include <functional>
 #include <memory>
 #include <random>
@@ -212,7 +214,7 @@ void LevelScene::spawnLeftWall(const int x, const int y) {
   leftWall->setSize(tileWidth, tileHeight);
 
   addObject(leftWall);
-
+  colissions.push_back(std::make_pair(Tile::LeftWall, leftWall));
   backgroundObjectLastNumber++;
 }
 void LevelScene::spawnRightWall(const int x, const int y) {
@@ -221,6 +223,7 @@ void LevelScene::spawnRightWall(const int x, const int y) {
       game->getGlobalRenderer());
   leftWall->setPosition(x, y);
   leftWall->setSize(tileWidth, tileHeight);
+  colissions.push_back(std::make_pair(Tile::RightWall, leftWall));
 
   addObject(leftWall);
 
@@ -232,6 +235,7 @@ void LevelScene::spawnTopWall(const int x, const int y) {
       game->getGlobalRenderer());
   leftWall->setPosition(x, y);
   leftWall->setSize(tileWidth, tileHeight);
+  colissions.push_back(std::make_pair(Tile::TopWall, leftWall));
 
   addObject(leftWall);
 
@@ -243,6 +247,7 @@ void LevelScene::spawnBottomWall(const int x, const int y) {
       game->getGlobalRenderer());
   leftWall->setPosition(x, y);
   leftWall->setSize(tileWidth, tileHeight);
+  colissions.push_back(std::make_pair(Tile::BottomWall, leftWall));
 
   addObject(leftWall);
 
@@ -254,8 +259,8 @@ void LevelScene::spawnPlayer(const int x, const int y) {
       game->getAssetManager()->getTexture(Texture::Player),
       game->getGlobalRenderer());
   player->setPosition(x, y);
-  player->setSize(52, 63);
-  player->setSrcRect(52, 63, 52 * 4, 0);
+  player->setSize(48, 48);
+  player->setSrcRect(48, 48, 48 * 4, 0);
 
   addObject(player);
 }
@@ -272,10 +277,10 @@ void LevelScene::initEnemies() {
   auto randTexture = std::bind(std::uniform_int_distribution<int>(0, 2),
                                std::mt19937(static_cast<unsigned int>(seed)));
   auto randCellX =
-      std::bind(std::uniform_int_distribution<int>(0, TileArrayHeight - 1),
+      std::bind(std::uniform_int_distribution<int>(3, TileArrayHeight - 2),
                 std::mt19937(static_cast<unsigned int>(seed)));
   auto randCellY =
-      std::bind(std::uniform_int_distribution<int>(0, TileArrayWidth - 1),
+      std::bind(std::uniform_int_distribution<int>(3, TileArrayWidth - 2),
                 std::mt19937(static_cast<unsigned int>(seed)));
   // start enemies spawn
   for (int i = 0; i < randCount(); i++) {
@@ -293,8 +298,7 @@ void LevelScene::initEnemies() {
     spawnEnemy(textureRand == 0
                    ? Texture::Enemy1
                    : (textureRand == 1 ? Texture::Enemy2 : Texture::Enemy3),
-               randType() == 0 ? AIType::wandering : AIType::chasing,
-               fieldPositionX + cellY * scaledTileSize,
+               AIType::wandering, fieldPositionX + cellY * scaledTileSize,
                fieldPositionY + cellX * scaledTileSize);
   }
 }
@@ -317,25 +321,17 @@ void LevelScene::spawnBomb(Object *object) {
   }
 
   //
-  int bombX = object->getPositionX();
-  int bombY = object->getPositionY();
+  int bombX = object->getPositionX() + 52 / 2;
+  int bombY = object->getPositionY() + 63 / 2 - 70;
 
-  const int bombPosDiffX = bombX % scaledTileSize;
-  const int bombPosDiffY = bombY % scaledTileSize;
-
-  bombX = (bombPosDiffX > scaledTileSize / 2)
-              ? bombX + scaledTileSize - bombPosDiffX
-              : bombX - bombPosDiffX;
-  bombY = (bombPosDiffY > scaledTileSize / 2)
-              ? bombY + scaledTileSize - bombPosDiffY
-              : bombY - bombPosDiffY;
-  bombY += fieldPositionY;
+  bombX = std::round(bombX / scaledTileSize);
+  bombY = std::round(bombY / scaledTileSize);
 
   bomb = std::make_shared<Sprite>(
       game->getAssetManager()->getTexture(Texture::Bomb),
       game->getGlobalRenderer());
   bomb->setSize(scaledTileSize, scaledTileSize);
-  bomb->setPosition(bombX, bombY);
+  bomb->setPosition(bombX * scaledTileSize, bombY * scaledTileSize + 70);
   insertObject(this->bomb, backgroundObjectLastNumber);
 
   // animation
@@ -343,8 +339,6 @@ void LevelScene::spawnBomb(Object *object) {
   auto animation = std::make_shared<Animation>();
   animation->addFrame(Frame(0, 0, tileWidth, tileHeight));
   animation->addFrame(Frame(tileWidth * 1, 0, tileWidth, tileHeight));
-  animation->addFrame(Frame(tileWidth * 2, 0, tileWidth, tileHeight));
-  animation->addFrame(Frame(tileWidth * 3, 0, tileWidth, tileHeight));
 
   animation->setSprite((bomb.get()));
   bomb->addAnimation(animation);
@@ -631,13 +625,55 @@ void LevelScene::updateScore() {
                            scoreNumber->getPositionY());
 }
 
-void LevelScene::updateplayerColisson() {}
+void LevelScene::updateplayerColisson() {
+  if (player == nullptr) {
+    return;
+  }
+  if (!player->isMoving()) {
+    return;
+  }
+  SDL_Rect playerRect = player->getRect();
+  playerRect.w = static_cast<int>(playerRect.w * 0.7);
+  playerRect.h = static_cast<int>(playerRect.h * 0.7);
 
-void LevelScene::updateEnemyColisson() {}
+  for (const auto collison : colissions) {
+    if (isColissonDetect(playerRect, collison.second->getRect())) {
+      player->revertLastMove();
+      player->revertLastMove();
+      // std::cout << "collison with " << collison.first << std::endl;
+    }
+  }
+}
+
+void LevelScene::updateEnemyColisson() {
+  for (const auto &enemy : enemies) {
+    // iterate drawables for collision
+    for (const auto &collisionObject : colissions) {
+      // check for block collision
+      if (isColissonDetect(enemy->getRect(),
+                           collisionObject.second->getRect())) {
+        // stop moving on collision detection
+        enemy->setMove(false);
+        enemy->revertLastMove();
+      }
+    }
+  }
+}
 
 void LevelScene::updateBangColisson() {}
 
-bool LevelScene::isColissonDetect(const SDL_Rect &obj1, const SDL_Rect &obj2) {
+bool LevelScene::isColissonDetect(const SDL_Rect &rect1,
+                                  const SDL_Rect &rect2) {
+  // check for collision
+  if (rect1.x + rect1.w / 2 <= rect2.x - rect2.w / 2)
+    return false;
+  if (rect1.x - rect1.w / 2 >= rect2.x + rect2.w / 2)
+    return false;
+  if (rect1.y + rect1.h / 2 <= rect2.y - rect2.h / 2)
+    return false;
+  if (rect1.y - rect1.h / 2 >= rect2.y + rect2.h / 2)
+    return false;
+
   return true;
 }
 
