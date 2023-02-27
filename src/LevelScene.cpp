@@ -654,7 +654,12 @@ void LevelScene::updateEnemyColisson() {
                            collisionObject.second->getRect())) {
         // stop moving on collision detection
         enemy->setMove(false);
-        enemy->revertLastMove();
+        int posX = std::round(enemy->getRect().x / 48.0f);
+        std::cout << enemy->getRect().x << " " << enemy->getRect().y
+                  << std::endl;
+        int posY = std::round((enemy->getRect().y - 70) / 48.0f);
+        std::cout << posX << " " << posY << std::endl;
+        enemy->setPosition(posX * scaledTileSize, posY * scaledTileSize + 70);
       }
     }
   }

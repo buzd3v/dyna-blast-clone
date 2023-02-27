@@ -38,7 +38,7 @@ private:
   AIType type = AIType::wandering;
 
   int direction = 1;
-  const float baseAtkspeed = 0.0018f;
+  const float baseAtkspeed = 0.0020f;
   const float attackSpeed = 0.0025f;
   const int attackRadius = 4;
 
