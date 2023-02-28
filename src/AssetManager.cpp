@@ -18,7 +18,7 @@ void AssetManager::load(SDL_Renderer *renderer) {
   loadTexture(renderer, Texture::BottomWall, "sprites/bottomwall.png");
   loadTexture(renderer, Texture::LeftWall, "sprites/leftwall.png");
   loadTexture(renderer, Texture::RightWall, "sprites/rightwall.png");
-
+  loadTexture(renderer, Texture::SpeedBonus, "sprites/bonus/bonus_speed@2.png");
   loadTexture(renderer, Texture::MenuBack, "sprites/start_panel.png");
   loadTexture(renderer, Texture::Stone, "sprites/map/steel.png");
   loadTexture(renderer, Texture::Grass, "sprites/grass.png");
@@ -30,6 +30,7 @@ void AssetManager::load(SDL_Renderer *renderer) {
   loadTexture(renderer, Texture::Bomb, "sprites/bomb@4.png");
   loadTexture(renderer, Texture::Explosion, "sprites/bonus_explosion@7.png");
   loadTexture(renderer, Texture::Door, "sprites/exit@2.png");
+  loadTexture(renderer, Texture::Transparent, "sprites/transparent.png");
 }
 
 std::shared_ptr<TTF_Font> AssetManager::getFont() const { return font; }

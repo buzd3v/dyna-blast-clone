@@ -1,6 +1,7 @@
 #include "../include/LevelScene.h"
 #include "../include/GameOverScene.h"
 #include "../include/Global.h"
+#include "../include/PathFinder.h"
 #include "../include/StageScene.h"
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_rect.h>
@@ -8,7 +9,9 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <functional>
+#include <iterator>
 #include <memory>
 #include <random>
 #include <string>
@@ -31,6 +34,7 @@ LevelScene::LevelScene(Game *game, const uint32_t stage,
               fieldPositionY + scaledTileSize);
 
   updateLevelTimer();
+  // spawnBonus(Texture::SpeedBonus, BonusType::speed, 48, 48 + 70);
 }
 
 void LevelScene::spawnScoreBoard() {
@@ -271,6 +275,49 @@ void LevelScene::spawnPlayer(const int x, const int y) {
   addObject(player);
 }
 
+void LevelScene::spawnBonus(Texture texture, BonusType type, const int x,
+                            const int y) {
+  bonus = new Bonus(game->getAssetManager()->getTexture(texture),
+                    game->getGlobalRenderer());
+  auto bonus_ptr = std::shared_ptr<Bonus>(bonus);
+  bonus_ptr->setPosition(x, y);
+  bonus_ptr->setSize(48, 48);
+
+  auto animation = std::make_shared<Animation>();
+  animation->addFrame(Frame(0, 0, 48, 48));
+  animation->addFrame(Frame(48, 0, 48, 48));
+
+  animation->setSprite(bonus_ptr.get());
+  bonus->addAnimation(animation);
+  addObject(bonus_ptr);
+
+  animation->play();
+}
+void LevelScene::initBonus(Object *object) {
+  const auto seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  auto randType = std::bind(std::uniform_int_distribution<int>(1, 3),
+                            std::mt19937(static_cast<unsigned int>(seed)));
+  const int randomType = randType();
+  switch (randomType) {
+  case 1: {
+    Texture texture = Texture::SpeedBonus;
+    BonusType bType = BonusType::speed;
+    spawnBonus(texture, bType, object->getPositionX(), object->getPositionY());
+  }
+  case 2: {
+    Texture texture = Texture::SpeedBonus;
+    BonusType bType = BonusType::speed;
+    spawnBonus(texture, bType, object->getPositionX(), object->getPositionY());
+  }
+  case 3: {
+    Texture texture = Texture::SpeedBonus;
+    BonusType bType = BonusType::speed;
+    spawnBonus(texture, bType, object->getPositionX(), object->getPositionY());
+  }
+  }
+}
+
 void LevelScene::initEnemies() {
   // we need enemy in random tile
   const auto seed =
@@ -299,12 +346,14 @@ void LevelScene::initEnemies() {
       cellX = randCellX();
       cellY = randCellY();
     }
+
     // spawn enemy
     int textureRand = randTexture();
     spawnEnemy(textureRand == 0
                    ? Texture::Enemy1
                    : (textureRand == 1 ? Texture::Enemy2 : Texture::Enemy3),
-               AIType::wandering, fieldPositionX + cellY * scaledTileSize,
+               randType() == 0 ? AIType::wandering : AIType::chasing,
+               fieldPositionX + cellY * scaledTileSize,
                fieldPositionY + cellX * scaledTileSize);
   }
 }
@@ -373,7 +422,7 @@ void LevelScene::spawnBang(Object *object) {
   tiles[bombCellY][bombCellX] = Tile::Grass;
 
   // render bang
-  for (int i = 0; i < bangSpawnCells; i++) {
+  for (int i = 0; i < 5; i++) {
     auto bang = std::make_shared<Sprite>(
         game->getAssetManager()->getTexture(Texture::Explosion),
         game->getGlobalRenderer());
@@ -678,6 +727,16 @@ void LevelScene::updateplayerColisson() {
       }
     }
   }
+  if (bonus != nullptr) {
+    if (isColissonDetect(playerRect, bonus->getRect())) {
+      if (bonus->type == BonusType::speed) {
+        player->setSpeed(0.004f);
+        // spawnGrass(bonus->getPositionX(), bonus->getPositionY());
+        bonus->setTransParentTexture(
+            game->getAssetManager()->getTexture(Texture::Transparent));
+      }
+    }
+  }
 }
 
 void LevelScene::updateEnemyColisson() {
@@ -808,8 +867,15 @@ void LevelScene::destroyBrick(std::shared_ptr<Sprite> brick) {
     auto randDoor =
         std::bind(std::uniform_int_distribution<int>(0, doorSpawnRandom),
                   std::mt19937(static_cast<unsigned int>(seed)));
+    auto randBonus = std::bind(std::uniform_int_distribution<int>(0, 3),
+                               std::mt19937(static_cast<unsigned int>(seed)));
     // spawn door if we can
-    if (randDoor() == 0 || bricksCount <= 1) {
+    const int random = randDoor();
+    if ((random == 1 || bricksCount <= 3) && !isBonus) {
+      initBonus(brick.get());
+      isBonus = true;
+    }
+    if (random == 0 || bricksCount <= 1) {
       spawnDoor(brick.get());
     }
   }
@@ -832,4 +898,42 @@ void LevelScene::destroyBrick(std::shared_ptr<Sprite> brick) {
   deleteObject(brick);
 }
 
-void LevelScene::toFollowPlayer(std::shared_ptr<Enemy> enemy) {}
+void LevelScene::toFollowPlayer(std::shared_ptr<Enemy> enemy) {
+  // move to nearest cell if enemy is wandering
+  if (enemy->isMoving()) {
+    std::pair<int, int> cell = std::make_pair(0, 0);
+    enemy->moveToCell(cell);
+    return;
+  }
+  // get cells of creatures by their position
+  const int playerCellX =
+      static_cast<int>(round((player->getPositionX() - fieldPositionX) /
+                             static_cast<float>(scaledTileSize)));
+  const int playerCellY =
+      static_cast<int>(round((player->getPositionY() - fieldPositionY) /
+                             static_cast<float>(scaledTileSize)));
+  const int enemyCellX =
+      static_cast<int>(round((enemy->getPositionX() - fieldPositionX) /
+                             static_cast<float>(scaledTileSize)));
+  const int enemyCellY =
+      static_cast<int>(round((enemy->getPositionY() - fieldPositionY) /
+                             static_cast<float>(scaledTileSize)));
+
+  // Source is the left-most bottom-most corner
+  std::pair<unsigned int, unsigned int> src =
+      std::make_pair(enemyCellY, enemyCellX);
+
+  // Destination is the left-most top-most corner
+  std::pair<unsigned int, unsigned int> dest =
+      std::make_pair(playerCellY, playerCellX);
+
+  // get best nearest cell to follow
+  std::pair<int, int> cell = findBestCell(tiles, src, dest);
+  if (cell.first >= 0 && cell.second >= 0) {
+    cell.first -= src.first;
+    cell.second -= src.second;
+    enemy->moveToCell(cell);
+  } else {
+    enemy->genNewPath();
+  }
+}

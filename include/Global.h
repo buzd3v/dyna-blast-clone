@@ -30,7 +30,8 @@ const uint doorSpawnRandom = 10;           // less value => further door
 const unsigned int bangSpawnCells = 5;     // bang spawn number of cells
 const unsigned int minEnemiesOnLevel = 2;  // minimum enemies count on level
 const unsigned int maxEnemiesOnLevel = 10; // maximum enemies count on level
-const int bangPos[5][2] = {{0, 0}, {0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+const int bangPos[9][2] = {{0, 0},  {0, 1}, {0, -1}, {1, 0}, {-1, 0},
+                           {-2, 0}, {2, 0}, {0, -2}, {0, 2}};
 
 const int TileArrayWidth = 19;
 const int TileArrayHeight = 11;

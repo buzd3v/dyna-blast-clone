@@ -17,9 +17,12 @@ public:
 
   std::shared_ptr<Animation> movement;
 
+  void setSpeed(float speed) { this->speed = speed; }
+  float getSpeed() { return this->speed; }
+
 private:
   bool isMovingHorizontal() const;
   bool isMovingVertical() const;
   Direction m_direction = Direction::NONE;
-  const float speed = 0.003f;
+  float speed = 0.003f;
 };

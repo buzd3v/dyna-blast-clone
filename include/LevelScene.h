@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Bonus.h"
 #include "Enemy.h"
 #include "Game.h"
 #include "Global.h"
@@ -48,6 +49,8 @@ private:
   void spawnBang(Object *object);
   void spawnDoor(Object *object);
   void spawnScoreBoard();
+  void spawnBonus(Texture texture, BonusType type, const int x, const int y);
+  void initBonus(Object *object);
 
   void finish() const;
   void gameOver();
@@ -94,6 +97,8 @@ private:
   std::vector<std::shared_ptr<Enemy>> enemies;
   std::shared_ptr<Sprite> bomb = nullptr;
   std::shared_ptr<Object> door = nullptr;
+  // std::shared_ptr<Object> bbonus = nullptr;
+  Bonus *bonus = nullptr;
 
   // colisson
   std::vector<std::pair<Tile, std::shared_ptr<Sprite>>> colissions;
@@ -123,4 +128,5 @@ private:
   int scaledTileSize = 48;
   // last object that used as background (grass)
   int backgroundObjectLastNumber = 0;
+  bool isBonus = false;
 };
