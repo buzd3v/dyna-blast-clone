@@ -51,7 +51,7 @@ private:
 
   void finish() const;
   void gameOver();
-  void exit();
+  void Exit() const;
 
   // timers
 

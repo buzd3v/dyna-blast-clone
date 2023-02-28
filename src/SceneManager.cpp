@@ -1,5 +1,6 @@
 #include "../include/manager/SceneManager.h"
 #include <SDL2/SDL_events.h>
+#include <iterator>
 #include <utility>
 
 void SceneManager::addScene(const std::string &name,
@@ -11,9 +12,8 @@ void SceneManager::addScene(const std::string &name,
               << std::endl;
     // it->second = scene;
     return;
-  } else {
-    scenes.emplace(name, scene);
   }
+  scenes[name] = std::move(scene);
 }
 
 void SceneManager::activeScene(const std::string &name) {
@@ -24,7 +24,6 @@ void SceneManager::activeScene(const std::string &name) {
     }
     currentScene = it->second;
     currentScene->enter();
-
   } else {
     std::cout << "Scene Manager - active " + name + " do not exist"
               << std::endl;
@@ -39,12 +38,13 @@ void SceneManager::removeScene(const std::string &name) {
         currentScene->exit();
         currentScene = nullptr;
       }
-      removedScenes.push(it->second);
-      scenes.erase(name);
-    } else {
-      std::cout << "Scene Manager - remove " + name + " do not exist"
-                << std::endl;
     }
+    removedScenes.push(it->second);
+    scenes.erase(name);
+
+  } else {
+    std::cout << "Scene Manager - remove " + name + " do not exist"
+              << std::endl;
   }
 }
 
@@ -57,3 +57,10 @@ void SceneManager::update(const uint delta) {
   currentScene->update(delta);
 }
 void SceneManager::draw() { currentScene->draw(); }
+
+void SceneManager::logScene() {
+  for (auto &scene : scenes) {
+    std::cout << scene.first << " ";
+  }
+  std::cout << std::endl;
+}

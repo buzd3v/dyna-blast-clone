@@ -22,7 +22,8 @@ enum class Texture : int {
   BottomWall,
   LeftWall,
   RightWall,
-  ScoreTable
+  ScoreTable,
+  SpeedBonus
 };
 class EnumHash {
 public:

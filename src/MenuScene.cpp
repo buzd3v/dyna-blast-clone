@@ -1,5 +1,6 @@
 #include "../include/MenuScene.h"
 #include "../include/Game.h"
+#include "../include/GameOverScene.h"
 #include "../include/Sprite.h"
 #include "../include/StageScene.h"
 #include "../include/manager/AssetManager.h"
@@ -58,6 +59,9 @@ MenuScene::MenuScene(Game *game) : Scene(game) {
   end->setSize(start->getWidth(), start->getHeight());
   end->setPosition(start->getPositionX(), start->getPositionY() + 100);
   addObject(end);
+
+  game->getSceneManager()->addScene("gameover",
+                                    std::make_shared<GameOverScene>(game));
 }
 
 void MenuScene::enter() {}

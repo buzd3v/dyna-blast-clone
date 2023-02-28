@@ -1,4 +1,5 @@
 #include "../include/LevelScene.h"
+#include "../include/GameOverScene.h"
 #include "../include/Global.h"
 #include "../include/StageScene.h"
 #include <SDL2/SDL_events.h>
@@ -426,7 +427,10 @@ void LevelScene::gameOver() {
   isGameOver = true;
 }
 
-void LevelScene::exit() {}
+void LevelScene::Exit() const {
+  game->getSceneManager()->activeScene("menu");
+  game->getSceneManager()->removeScene("level");
+}
 
 void LevelScene::event(SDL_Event &event) {
   Scene::event(event);
@@ -658,11 +662,20 @@ void LevelScene::updateplayerColisson() {
 
       // std::cout << "collison with " << collison.first << std::endl;
       int posX = std::round(player->getRect().x / 48.0f);
-      std::cout << player->getRect().x << " " << player->getRect().y
-                << std::endl;
+
       int posY = std::round((player->getRect().y - 70) / 48.0f);
-      std::cout << posX << " " << posY << std::endl;
       player->setPosition(posX * scaledTileSize, posY * scaledTileSize + 70);
+    }
+  }
+  if (door != nullptr) {
+    if (isColissonDetect(playerRect, door->getRect())) {
+      // check win condition
+      if (!isGameOver && enemies.size() == 0) {
+        gameOver();
+        isWin = true;
+        score += stageCompleteScore;
+        gameOverTimer = winTimerStart;
+      }
     }
   }
 }
@@ -677,10 +690,7 @@ void LevelScene::updateEnemyColisson() {
         // stop moving on collision detection
         enemy->setMove(false);
         int posX = std::round(enemy->getRect().x / 48.0f);
-        std::cout << enemy->getRect().x << " " << enemy->getRect().y
-                  << std::endl;
         int posY = std::round((enemy->getRect().y - 70) / 48.0f);
-        std::cout << posX << " " << posY << std::endl;
         enemy->setPosition(posX * scaledTileSize, posY * scaledTileSize + 70);
       }
     }

@@ -17,6 +17,8 @@ public:
   void update(const uint delta);
   void draw();
 
+  void logScene();
+
 private:
   std::unordered_map<std::string, std::shared_ptr<Scene>> scenes;
   std::queue<std::shared_ptr<Scene>> removedScenes;
