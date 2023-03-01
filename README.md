@@ -1,6 +1,8 @@
 # dyna-blast-clone]
-
-* install make
+## Requires
+* make
+* sdl2_dev
+##Install 
 * run this
 ```
 git clone https://github.com/buzd3v/dyna-blast-clone.git
