@@ -10,4 +10,4 @@ cd ./dyna-blast-clone
 make all
 cd ./output/main
 ```
-* enjoy
+*  run the excutable & enjoy
